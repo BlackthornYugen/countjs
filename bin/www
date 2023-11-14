@@ -1,0 +1,133 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+const app = require('../app');
+const debug = require('debug')('counterjs:server');
+const http = require('http');
+const WebSocket = require("ws");
+const rooms = {};
+const addPattern = /(?<value>[+-]?\d+)\s+(?<guid>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/i;
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+const port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+const server = http.createServer(app);
+const wss = new WebSocket.WebSocketServer({ server, path: '/ws' });
+
+wss.on('connection', function connection(ws) {
+  ws.on('message', function incoming(message) {
+    console.log('received: %s', message);
+
+    handleMessage(message.toString(), ws);
+  });
+});
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  const port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  const bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  const addr = server.address();
+  const bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}
+
+function handleMessage(message, ws) {
+  if (message.startsWith("Subscribe: ")) {
+    const roomName = message.split("Subscribe: ")[1];
+    if (rooms[roomName] === undefined) {
+      rooms[roomName] = {count: 0, members: []}
+    } else {
+      ws.send(rooms[roomName].count);
+    }
+    rooms[roomName].members.push(new WeakRef(ws));
+  }
+
+  const match = message.match(addPattern);
+  if (match) {
+    const thisRoom = rooms[match.groups.guid];
+    const activeMembers = [];
+    thisRoom.count += parseInt(match.groups.value);
+    thisRoom.members.forEach((weakRef) => {
+      const client = weakRef.deref();
+      if (client) {
+        activeMembers.push(weakRef);
+        if (client !== ws) {
+          client.send(match.groups.value);
+        }
+      }
+    });
+    console.log(`${activeMembers.length} | ${thisRoom.members.length}`)
+    thisRoom.members = activeMembers;
+  }
+}
+
+

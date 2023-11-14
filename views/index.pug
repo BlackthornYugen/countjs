@@ -1,0 +1,18 @@
+extends layout
+
+block content
+  h1= title
+  p
+    | Count:
+    span#count 0
+  button#plusOneBtn +1
+  button#minusOneBtn -1
+  //button#connectBtn Connect
+  //button#plusOneBtn(disabled) +1
+  //button#minusOneBtn(disabled) -1
+  //button#disconnectBtn(disabled) Disconnect
+  //div
+  //  strong Messages:
+  //  ul#messages
+  script(src="/javascripts/script.js")
+
