@@ -7,43 +7,18 @@ const app = require('../app');
 const debug = require('debug')('counterjs:server');
 const http = require('http');
 const WebSocket = require("ws");
+
+// Object to store room data.
 const rooms = {};
+
+// Regular expression pattern for message parsing.
 const addPattern = /(?<value>[+-]?\d+)\s+(?<guid>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/i;
 
 /**
- * Get port from environment and store in Express.
- */
-
-const port = normalizePort(process.env.PORT || '3000');
-app.set('port', port);
-
-/**
- * Create HTTP server.
- */
-
-const server = http.createServer(app);
-const wss = new WebSocket.WebSocketServer({ server, path: '/ws' });
-
-wss.on('connection', function connection(ws) {
-  ws.on('message', function incoming(message) {
-    console.log('received: %s', message);
-
-    handleMessage(message.toString(), ws);
-  });
-});
-
-/**
- * Listen on provided port, on all network interfaces.
- */
-
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
-
-/**
  * Normalize a port into a number, string, or false.
+ * @param {string} val - The value to normalize.
+ * @returns {number|string|false} The normalized port or named pipe.
  */
-
 function normalizePort(val) {
   const port = parseInt(val, 10);
 
@@ -60,18 +35,37 @@ function normalizePort(val) {
   return false;
 }
 
+// Normalize and set the port for the application.
+const port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+/**
+ * Create HTTP server and WebSocket server.
+ */
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server, path: '/ws' });
+
+/**
+ * WebSocket server connection event handler.
+ * Sets up message handling for each connected client.
+ */
+wss.on('connection', function connection(ws) {
+  ws.on('message', function incoming(message) {
+    console.log('received: %s', message);
+    handleMessage(message.toString(), ws);
+  });
+});
+
 /**
  * Event listener for HTTP server "error" event.
+ * @param {Object} error - The error object.
  */
-
 function onError(error) {
   if (error.syscall !== 'listen') {
     throw error;
   }
 
-  const bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+  const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
 
   // handle specific listen errors with friendly messages
   switch (error.code) {
@@ -91,43 +85,68 @@ function onError(error) {
 /**
  * Event listener for HTTP server "listening" event.
  */
-
 function onListening() {
   const addr = server.address();
-  const bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
+  const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
 
+/**
+ * Handle incoming messages from WebSocket clients.
+ * @param {string} message - The received message.
+ * @param {Object} ws - The WebSocket client instance.
+ */
 function handleMessage(message, ws) {
+  // Handle subscription messages
   if (message.startsWith("Subscribe: ")) {
-    const roomName = message.split("Subscribe: ")[1];
-    if (rooms[roomName] === undefined) {
-      rooms[roomName] = {count: 0, members: []}
-    } else {
-      ws.send(rooms[roomName].count);
-    }
-    rooms[roomName].members.push(new WeakRef(ws));
+    subscribeToRoom(message, ws);
   }
 
+  // Handle addition pattern messages
   const match = message.match(addPattern);
   if (match) {
-    const thisRoom = rooms[match.groups.guid];
-    const activeMembers = [];
-    thisRoom.count += parseInt(match.groups.value);
-    thisRoom.members.forEach((weakRef) => {
-      const client = weakRef.deref();
-      if (client) {
-        activeMembers.push(weakRef);
-        if (client !== ws) {
-          client.send(match.groups.value);
-        }
-      }
-    });
-    console.log(`${activeMembers.length} | ${thisRoom.members.length}`)
-    thisRoom.members = activeMembers;
+    updateRoomCount(match, ws);
   }
 }
 
+/**
+ * Subscribe a WebSocket client to a room.
+ * @param {string} message - The received message.
+ * @param {Object} ws - The WebSocket client instance.
+ */
+function subscribeToRoom(message, ws) {
+  const roomName = message.split("Subscribe: ")[1];
+  if (rooms[roomName] === undefined) {
+    rooms[roomName] = {count: 0, members: []};
+  } else {
+    ws.send(rooms[roomName].count.toString());
+  }
+  rooms[roomName].members.push(new WeakRef(ws));
+}
 
+/**
+ * Update the count of a room and notify its members.
+ * @param {Object} match - The regex match object.
+ * @param {Object} ws - The WebSocket client instance.
+ */
+function updateRoomCount(match, ws) {
+  const thisRoom = rooms[match.groups.guid];
+  const activeMembers = [];
+  thisRoom.count += parseInt(match.groups.value, 10);
+  thisRoom.members.forEach((weakRef) => {
+    const client = weakRef.deref();
+    if (client) {
+      activeMembers.push(weakRef);
+      if (client !== ws) {
+        client.send(match.groups.value);
+      }
+    }
+  });
+  console.log(`${activeMembers.length} | ${thisRoom.members.length}`);
+  thisRoom.members = activeMembers;
+}
+
+// Start the server and listen on the specified port.
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
