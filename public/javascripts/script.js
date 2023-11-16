@@ -45,7 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
             socket.send('+1 ' + room);
         }
         handleMessage('+1');
-        navigator.vibrate([20,10,10]);
     });
 
     minusOneBtn.addEventListener('click', () => {
@@ -53,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
             socket.send('-1 ' + room);
         }
         handleMessage('-1');
-        navigator.vibrate([90,20,200]);
     });
 
     function handleMessage(message) {
