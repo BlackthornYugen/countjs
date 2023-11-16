@@ -58,16 +58,42 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(message);
         const value = parseInt(message);
         if (isFinite(value)) {
-            if (value > 0) {
-                navigator.vibrate([90,20,10]);
-            } else {
-                navigator.vibrate([90,20,200]);
-            }
             let localCount = parseInt(count.innerText);
             count.innerText = isFinite(localCount) ? (localCount + value).toString() : (value).toString();
+
+            if ('vibrate' in navigator) { // Handle safari or other browsers where vibrate is not a func
+                navigator.vibrate(createVibrationPattern(value));
+            }
         }
     }
 });
+
+function createVibrationPattern(value) {
+    const shortVibration = 100;
+    const longVibration = 150;
+    const pause = 50;
+    let pattern = [];
+
+    // Truncate the value to a maximum of 10
+    value = Math.min(Math.abs(value), 10) * (value >= 0 ? 1 : -1);
+
+    if (value > 0) {
+        for (let i = 0; i < value; i++) {
+            pattern.push(shortVibration);
+            if (i < value - 1) {
+                pattern.push(pause);
+            }
+        }
+    } else if (value < 0) {
+        for (let i = 0; i < Math.abs(value); i++) {
+            pattern.push(longVibration);
+            if (i < Math.abs(value) - 1) {
+                pattern.push(pause);
+            }
+        }
+    }
+    return pattern;
+}
 
 function getRandomHexDigit() {
     return (crypto.getRandomValues(new Uint8Array(1))[0] % 16).toString(16);
