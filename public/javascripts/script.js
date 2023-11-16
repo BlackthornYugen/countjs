@@ -60,6 +60,11 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(message);
         const value = parseInt(message);
         if (isFinite(value)) {
+            if (value > 0) {
+                navigator.vibrate([90,20,10]);
+            } else {
+                navigator.vibrate([90,20,200]);
+            }
             let localCount = parseInt(count.innerText);
             count.innerText = isFinite(localCount) ? (localCount + value).toString() : (value).toString();
         }
