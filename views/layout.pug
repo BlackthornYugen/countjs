@@ -2,6 +2,9 @@ doctype html
 html
   head
     title= title
-    link(rel='stylesheet', href='/stylesheets/style.css')
+    if subdomain
+      link(rel='stylesheet', href=`/stylesheets/${subdomain}.css`)
+    else
+      link(rel='stylesheet', href='/stylesheets/style.css')
   body
     block content

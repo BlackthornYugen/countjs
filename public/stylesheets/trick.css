@@ -1,0 +1,52 @@
+
+body {
+  font-family: 'Creepster', cursive;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #2c2f33;
+  color: #e3e3e3;
+}
+
+.container {
+  padding: 30px;
+  background-color: #1d1f22;
+  box-shadow: 0px 0px 30px rgba(0, 0, 0, 0.7);
+  border: 3px solid #e74c3c; /* Adding a border to make it pop a bit more */
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 18px;
+  margin: 10px;
+  cursor: pointer;
+  background-color: #e74c3c;
+  border: none;
+  color: white;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+button:hover {
+  background-color: #d43f29;
+  transform: scale(1.05);
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
+/* latin */
+@font-face {
+  font-family: 'Creepster';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/creepster/v13/AlZy_zVUqJz4yMrniH4Rcn35fh4Dog.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
