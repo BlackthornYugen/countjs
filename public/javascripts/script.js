@@ -2,37 +2,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const plusOneBtn = document.getElementById('plusOneBtn');
     const minusOneBtn = document.getElementById('minusOneBtn');
     const count = document.getElementById('count');
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const socket = new WebSocket(`${wsProtocol}//${window.location.host}/ws`);
+    let socket;
     let room = window.location.hash.substring(1) || generateUUID();
+    let shouldReconnect = true;
 
-    socket.onopen = function() {
-        plusOneBtn.disabled = false;
-        minusOneBtn.disabled = false;
-        console.log('Connected');
-        socket.send("Subscribe: " + room)
-        window.location.hash = room;
-    };
+    function connectWebSocket() {
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        socket = new WebSocket(`${wsProtocol}//${window.location.host}/ws`);
 
-    socket.onmessage = function(event) {
-        handleMessage(`${event.data}`);
-    };
+        socket.onopen = function() {
+            plusOneBtn.disabled = false;
+            minusOneBtn.disabled = false;
+            console.log('Connected');
+            socket.send("Subscribe: " + room);
+            count.innerText = "???"
+            window.location.hash = room;
+        };
 
-    socket.onclose = function() {
-        plusOneBtn.disabled = true;
-        minusOneBtn.disabled = true;
-        console.log('Disconnected');
-    };
+        socket.onmessage = function(event) {
+            handleMessage(`${event.data}`);
+        };
 
-    socket.onerror = function(err) {
-        console.log('Error occurred', err);
-    };
+        socket.onclose = function() {
+            plusOneBtn.disabled = true;
+            minusOneBtn.disabled = true;
+            console.log('Disconnected');
+            if (shouldReconnect) {
+                setTimeout(connectWebSocket, 2000); // Try to reconnect every 2 seconds
+            }
+        };
+
+        socket.onerror = function(err) {
+            console.log('Error occurred', err);
+        };
+    }
+
+    // Initial connection
+    connectWebSocket();
 
     plusOneBtn.addEventListener('click', () => {
         if (socket) {
             socket.send('+1 ' + room);
         }
-        handleMessage('+1')
+        handleMessage('+1');
         navigator.vibrate([20,10,10]);
     });
 
@@ -40,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (socket) {
             socket.send('-1 ' + room);
         }
-        handleMessage('-1')
+        handleMessage('-1');
         navigator.vibrate([90,20,200]);
     });
 
@@ -48,7 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(message);
         const value = parseInt(message);
         if (isFinite(value)) {
-            count.innerText = (parseInt(count.innerText) + value).toString()
+            let localCount = parseInt(count.innerText);
+            count.innerText = isFinite(localCount) ? (localCount + value).toString() : (value).toString();
         }
     }
 });
