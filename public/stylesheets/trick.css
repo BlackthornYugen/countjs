@@ -7,12 +7,13 @@ body {
   height: 100vh;
   background-color: #2c2f33;
   color: #e3e3e3;
+  touch-action: manipulation;
 }
 
 .container {
   padding: 30px;
   background-color: #1d1f22;
-  box-shadow: 0px 0px 30px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
   border: 3px solid #e74c3c; /* Adding a border to make it pop a bit more */
 }
 
