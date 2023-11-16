@@ -8,7 +8,7 @@ const debug = require('debug')('counterjs:server');
 const http = require('http');
 const WebSocket = require("ws");
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('counts.db');
+const db = new sqlite3.Database('data/db.sqlite');
 
 // Regular expression pattern for message parsing.
 const addPattern = /(?<value>[+-]?\d+)\s+(?<guid>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/i;
@@ -174,7 +174,6 @@ function updateRoomCount(match, ws) {
       }
     }
   });
-  console.log(`${activeMembers.length} | ${thisRoom.members.length}`);
   thisRoom.members = activeMembers;
 
   // Upsert operation in SQLite to update the count for the room
