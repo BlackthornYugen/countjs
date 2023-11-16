@@ -2,7 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const plusOneBtn = document.getElementById('plusOneBtn');
     const minusOneBtn = document.getElementById('minusOneBtn');
     const count = document.getElementById('count');
-    let socket  = new WebSocket('ws://localhost:3000/ws');
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socket = new WebSocket(`${wsProtocol}//${window.location.host}/ws`);
     let room = window.location.hash.substring(1) || generateUUID();
 
     socket.onopen = function() {
