@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.onopen = function() {
         plusOneBtn.disabled = false;
         minusOneBtn.disabled = false;
-        handleMessage('Connected');
+        console.log('Connected');
         socket.send("Subscribe: " + room)
         window.location.hash = room;
     };
@@ -20,11 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.onclose = function() {
         plusOneBtn.disabled = true;
         minusOneBtn.disabled = true;
-        handleMessage('Disconnected');
+        console.log('Disconnected');
     };
 
-    socket.onerror = function() {
-        handleMessage('Error occurred');
+    socket.onerror = function(err) {
+        console.log('Error occurred', err);
     };
 
     plusOneBtn.addEventListener('click', () => {
@@ -42,8 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function handleMessage(message) {
-        const messageElement = document.createElement('li');
-        messageElement.textContent = message;
         console.log(message);
         const value = parseInt(message);
         if (isFinite(value)) {
